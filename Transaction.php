@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 class Transaction {
     public function __construct(
@@ -8,36 +7,44 @@ class Transaction {
         private float $amount
     ) {}
 
-    public function process(float &$balance): bool {
-        return match($this->type) {
-            'deposit' => $this->handleDeposit($balance),
-            'withdrawal' => $this->handleWithdrawal($balance),
-            default => false
+    public function process(array &$sessionData): bool|string {
+        if (!isset($sessionData['balance'])) {
+            $sessionData['balance'] = 0.0;
+        }
+
+        if (!isset($sessionData['history'])) {
+            $sessionData['history'] = [];
+        }
+
+        $result = match ($this->type) {
+            'deposit' => $this->handleDeposit($sessionData),
+            'withdrawal' => $this->handleWithdrawal($sessionData),
+            default => 'Invalid transaction type',
         };
+
+        if ($result === true) {
+            $sessionData['history'][] = [
+                'id' => $this->id,
+                'type' => $this->type,
+                'amount' => $this->amount,
+                'date' => date('Y-m-d H:i:s')
+            ];
+            return true;
+        }
+
+        return $result;
     }
 
-    private function handleDeposit(float &$balance): bool {
-        $balance += $this->amount;
+    private function handleDeposit(array &$sessionData): bool {
+        $sessionData['balance'] += $this->amount;
         return true;
     }
 
-    private function handleWithdrawal(float &$balance): bool {
-        if ($balance >= $this->amount) {
-            $balance -= $this->amount;
-            return true;
+    private function handleWithdrawal(array &$sessionData): bool|string {
+        if ($sessionData['balance'] < $this->amount) {
+            return 'Insufficient balance';
         }
-        return false;
-    }
-
-    public function getId(): string {
-        return $this->id;
-    }
-
-    public function getType(): string {
-        return $this->type;
-    }
-
-    public function getAmount(): float {
-        return $this->amount;
+        $sessionData['balance'] -= $this->amount;
+        return true;
     }
 }
