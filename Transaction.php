@@ -19,7 +19,7 @@ class Transaction {
         $result = match ($this->type) {
             'deposit' => $this->handleDeposit($sessionData),
             'withdrawal' => $this->handleWithdrawal($sessionData),
-            default => 'Invalid transaction type',
+            default => 'Jenis transaksi tidak valid',
         };
 
         if ($result === true) {
@@ -42,7 +42,7 @@ class Transaction {
 
     private function handleWithdrawal(array &$sessionData): bool|string {
         if ($sessionData['balance'] < $this->amount) {
-            return 'Insufficient balance';
+            return 'Saldo tidak mencukupi';
         }
         $sessionData['balance'] -= $this->amount;
         return true;
